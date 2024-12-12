@@ -1,0 +1,74 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/5/CPU.hdl
+/**
+ * The Hack Central Processing unit (CPU).
+ * Parses the binary code in the instruction input and executes it according to the
+ * Hack machine language specification. In the case of a C-instruction, computes the
+ * function specified by the instruction. If the instruction specifies to read a memory
+ * value, the inM input is expected to contain this value. If the instruction specifies
+ * to write a value to the memory, sets the outM output to this value, sets the addressM
+ * output to the target address, and asserts the writeM output (when writeM = 0, any
+ * value may appear in outM).
+ * If the reset input is 0, computes the address of the next instruction and sets the
+ * pc output to that value. If the reset input is 1, sets pc to 0.
+ * Note: The outM and writeM outputs are combinational: they are affected by the
+ * instruction's execution during the current cycle. The addressM and pc outputs are
+ * clocked: although they are affected by the instruction's execution, they commit to
+ * their new values only in the next cycle.
+ */
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+	//// Replace this comment with your code.
+
+    // First Mux, A or C instruction
+    Mux16(a= instruction, b= outalu, sel= instruction[15], out= ina);
+
+    // A register, works under A instruction or as a register under C instrution
+    Or(a= notins15, b= instruction[5], out= loada);
+    Not(in= instruction[15], out= notins15);
+    ARegister(in= ina, load= loada, out= outa, out[0..14]= addressM);
+
+    // Second Mux, DM or DA comp
+    Mux16(a= outa, b= inM, sel= instruction[12], out= inalu);
+
+    // D register
+    And(a= instruction[4], b= instruction[15], out= loadd);
+    DRegister(in= outalu, load= loadd, out= dout);
+
+    // M dest
+    And(a= instruction[15], b= instruction[3], out= writeM);
+
+    // ALU (the control of ALU is 6 bits comp)
+    ALU(x= dout, y= inalu, zx= instruction[11], nx= instruction[10], zy= instruction[9], ny= instruction[8], f= instruction[7], no= instruction[6], out= outalu, out= outM, out= outd, zr= zr, ng= ng);
+
+    // PC load 
+    // Less than 0
+    And(a= instruction[2], b= ng, out= outj1);
+    // Equal to 0
+    And(a= instruction[1], b= zr, out= outj2);
+    // Greater than 0, first Not zr&ng, then And, then And j3 with that result, finally check whether A instruction or not(if A then PC++, if C jump)
+    Not(in= zr, out= nzr);
+    Not(in= ng, out= g);
+    And(a= nzr, b= g, out= nzrg);    
+    And(a= instruction[0], b= nzrg, out= outj3);
+    Or(a= outj1, b= outj2, out= outj1j2);
+    Or(a= outj1j2, b= outj3, out= outj1j2j3);
+    And(a= outj1j2j3, b= instruction[15], out= loadpc);
+
+    // PC output should be 15 digits as required
+    PC(in= outa, load=loadpc, inc= true, reset= reset, out[0..14]= pc);
+}
