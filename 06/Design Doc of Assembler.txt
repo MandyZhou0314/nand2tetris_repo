@@ -1,0 +1,79 @@
+Design Doc of Assembler
+
+Summary
+    The documatation is designed to do the translation from assembly program to binary code for computer to excute
+
+Problem to solve
+    Whitespace >- includes blank lines and comments, just ingore it
+    Instruction >- translate A/C instruction one by one based on certains rules
+    Symbol >- pre-defined/label/variables
+
+Architecture
+    Source program: xxx.asm
+    Generated code: xxx.hack
+    Including four modules(main/parser/code/symboltable) to deal with specific problems and better to isolate questions for testing. 
+    Considering to the complex of symbols, code and test will start without symbols, then symbols part will be added if no exception
+
+Module specification
+    Main(total file)
+        Initialize I/O files and drives process by calling methods
+        File open and save
+    Parser(line by line)
+        ?instance variable: symboltable 
+        Open and read the text file
+        Move to next line in the file
+            >boolean hasMoreCommands()
+            >Get next command
+            >read one line as a time
+            >Skip whitespace and comments
+            >Label
+        Get the fields of current command
+            >Type command(A/C/Label)
+            >- Easy access to fields, return string
+                    def >- Iterate instruction type(A/C/L), return the instruction type only
+                    parseL(first read) >- starting with "(", add pair(symbol,address) into ST dic
+                    var_sym_(second read) >- starting with "@" and xxx is not a number, check if a var_sym already exist in ST already, return pair(symbol,address)
+                    parseA >- starting with "@" and xxx is a number, return xxx string
+                    parseC >- others, separate into three parts(dest/comp/jump), return three string
+    Code
+        Input: parceA/C from Parser
+        Output: string
+        Dealing with A instruction translation: translate int string to a 15 bits(0/1)
+        Dealing with C instruction translation: dest=comp; jump to 3 strings by using three dics
+            dest = {}
+            comp = {}
+            jump = {}
+    SymbolTable(Class)
+        A dictionary, ST = {}
+        Initialize a pre-defined symbol table
+        Add pair to table
+        
+TBD:
+1. Where should whitespace skip be added?
+2. Where should ST be added?
+
+
+        // first pass
+        for r in reader:
+            processed_r
+            if len(procssed_r) > 0:
+                rows.append(processed_r)
+            else:
+                print(f"ignored {r}")
+        // second pass
+        for r in rows:
+            binaryString = parser.parse(r)
+            result.append(binaryString)
+        outfile.save(result)
+
+
+        //example of parsing and coding 
+        String c = parser.comp();
+        String d = parser.dest();
+        String j = parser.jump();
+
+        string cc = code.comp(c);
+        String dd = code.dest(d);
+        String jj = code.jump(j):
+
+        String out = "111" + cc + dd + jj
