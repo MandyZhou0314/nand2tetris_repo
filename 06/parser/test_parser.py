@@ -3,12 +3,9 @@ from parser import InstructionType
 
 def test_remove_wAndc():
     p = Parser()
-    p.current_instruction = "// this is a comment."
-    assert p.remove_wAndc() == ""
-    p.current_instruction = "do you know // this is a comment?"
-    assert p.remove_wAndc() == "do you know"
-    p.current_instruction = " "
-    assert p.remove_wAndc() == ""
+    assert p.remove_wAndc("// this is a comment.") == ""
+    assert p.remove_wAndc("do you know // this is a comment?") == "do you know"
+    assert p.remove_wAndc(" ") == ""
 
 def test_run_first_pass():
     raw_rows = [

@@ -23,17 +23,16 @@ class Parser:
         self.symbol_table = Symbol_table()
         self.code = Code()
 
-    def remove_wAndc(self) -> str:
+    def remove_wAndc(self, s: str) -> str:
         # remove all content after "//" and whitespace by calling strip
-        if "//" in self.current_instruction:
-            self.current_instruction, _ = self.current_instruction.split("//")
-        return self.current_instruction.strip()            
+        if "//" in s:
+            s, _ = s.split("//")
+        return s.strip()            
         
     def run_first_pass(self):
         # update the first_pass list for L-instruction
         for row in self.raw_rows:
-            self.current_instruction = row
-            self.current_instruction = self.remove_wAndc()
+            self.current_instruction = self.remove_wAndc(row)
             if len(self.current_instruction) == 0:
                 continue
             if self.instructionType() != InstructionType.L_INSTRUCTION:
