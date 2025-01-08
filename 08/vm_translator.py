@@ -1,6 +1,5 @@
 import sys
 import os
-sys.path.insert(0, "../parser")
 from parser import Parser
 
 def parse_vm_file(inputFileStr: str) -> list:

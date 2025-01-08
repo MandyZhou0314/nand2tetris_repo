@@ -1,8 +1,4 @@
 from enum import Enum
-
-
-import sys
-sys.path.insert(0, "../code_writer")
 from code_writer import CodeWriter
 
 class CommandType(Enum):

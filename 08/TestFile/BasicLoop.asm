@@ -18,7 +18,7 @@ D=M
 @R13
 A=M
 M=D
-(LOOP)
+(BasicLoop.$LOOP)
 @0   // push argument 0
 D=A
 @ARG
@@ -134,7 +134,7 @@ M=M+1
 M=M-1
 A=M
 D=M
-@LOOP
+@BasicLoop.$LOOP
 D;JNE
 @0   // push local 0
 D=A
