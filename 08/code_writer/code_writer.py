@@ -1,6 +1,7 @@
 class CodeWriter:
     def __init__(self, file_name=""):
         self.file_name = file_name
+        self.function_name = ""
         self.asm_codes = []
         self.jump_count = 0
         self.ret_i = 0
@@ -120,13 +121,13 @@ class CodeWriter:
     
     def write_label(self, label: str):
         self.clear()
-        self.asm_codes.extend([f"({label})"])
+        self.asm_codes.extend([f"({self.file_name}.{self.function_name}${label})"])
         return self.asm_codes
 
     def write_goto(self, label: str):
         #unconditional jump
         self.clear()
-        self.asm_codes.extend([f"@{label}", "0;JMP"])
+        self.asm_codes.extend([f"@{self.file_name}.{self.function_name}${label}", "0;JMP"])
         return self.asm_codes
         
     def write_if(self, label: str):
@@ -135,7 +136,7 @@ class CodeWriter:
         #if cond is pop
         self.pop_stack_to_D()
         #jump if D is not equal to 0
-        self.asm_codes.extend([f"@{label}", "D;JNE"])
+        self.asm_codes.extend([f"@{self.file_name}.{self.function_name}${label}", "D;JNE"])
         return self.asm_codes
         
     def write_function(self, func: str, n_vars: int):
@@ -146,11 +147,12 @@ class CodeWriter:
         self.asm_codes.extend(["@0", "D=A"])
         for i in range(n_vars):
             self.push_D_to_stack()
+        self.function_name = func
         return self.asm_codes
         
     def write_call(self, func, n_args: int):
         self.clear()
-        return_label = f"{func}$ret.{self.ret_i}"
+        return_label = f"{self.file_name}.{func}$ret.{self.ret_i}"
         self.asm_codes.extend(["// push retAddrLabel"])
         self.asm_codes.extend([f"@{return_label}", "D=A"])
         self.push_D_to_stack()
