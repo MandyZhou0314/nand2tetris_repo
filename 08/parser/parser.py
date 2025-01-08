@@ -40,16 +40,24 @@ class Parser:
             asm_codes = []
             
             self.current_command = command
-            if self.CommandType() == CommandType.Command_Arithmetic:
+            command_type = self.CommandType()
+            if command_type == CommandType.Command_Arithmetic:
                 asm_codes = self.code_writer.write_arithmetic(self.arg1())                
-            elif self.CommandType() in [CommandType.Command_Push, CommandType.Command_Pop]:
+            elif command_type in [CommandType.Command_Push, CommandType.Command_Pop]:
                 asm_codes = self.code_writer.write_push_pop(self.arg0(), self.arg1(), self.arg2())
-            elif self.CommandType() in [CommandType.Command_Label]:
+            elif command_type in [CommandType.Command_Label]:
                 asm_codes = self.code_writer.write_label(self.arg1())
-            elif self.CommandType() in [CommandType.Command_Goto]:
+            elif command_type in [CommandType.Command_Goto]:
                 asm_codes = self.code_writer.write_goto(self.arg1())
-            elif self.CommandType() in [CommandType.Command_If]:
+            elif command_type in [CommandType.Command_If]:
                 asm_codes = self.code_writer.write_if(self.arg1())
+            elif command_type in [CommandType.Command_Function]:
+                asm_codes = self.code_writer.write_function(self.arg1(), self.arg2())
+            elif command_type in [CommandType.Command_Return]:
+                asm_codes = self.code_writer.write_return()
+            elif command_type in [CommandType.Command_Call]:
+                asm_codes = self.code_writer.write_call(self.arg1(), self.arg2())
+            # write_call
             self.second_pass_result.extend(asm_codes)    
             
     def get_asm_codes(self):
@@ -62,9 +70,7 @@ class Parser:
             
     def CommandType(self) -> CommandType:
         # check command type based on current_command
-        if self.count_words(self.current_command) == 1:
-            return CommandType.Command_Arithmetic
-        elif self.current_command.startswith("push"):
+        if self.current_command.startswith("push"):
             return CommandType.Command_Push
         elif self.current_command.startswith("pop"):
             return CommandType.Command_Pop
@@ -73,13 +79,24 @@ class Parser:
         elif self.current_command.startswith("goto"):
             return CommandType.Command_Goto
         elif self.current_command.startswith("if-goto"):
-            return CommandType.Command_If  
+            return CommandType.Command_If
+        elif self.current_command.startswith("function"):
+            return CommandType.Command_Function
+        elif self.current_command.startswith("call"):
+            return CommandType.Command_Call
+        elif self.current_command.startswith("return"):
+            return CommandType.Command_Return   
+        elif self.count_words(self.current_command) == 1:
+            return CommandType.Command_Arithmetic
     
     def arg0(self) -> str:
         #return push/pop, shouldn't be called when currend command is return
         assert self.CommandType() not in [CommandType.Command_Return]
         assert self.CommandType() in [CommandType.Command_Push, CommandType.Command_Pop, 
-                                      CommandType.Command_Label, CommandType.Command_Goto, CommandType.Command_If]
+                                      CommandType.Command_Label, CommandType.Command_Goto, 
+                                      CommandType.Command_If, CommandType.Command_Function, 
+                                      CommandType.Command_Call, CommandType.Command_Return
+                                      ]
         type = self.current_command.split()[0]
         return type
     

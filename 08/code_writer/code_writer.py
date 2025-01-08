@@ -3,6 +3,7 @@ class CodeWriter:
         self.file_name = file_name
         self.asm_codes = []
         self.jump_count = 0
+        self.ret_i = 0
 
     def clear(self):
         self.asm_codes = []
@@ -137,14 +138,85 @@ class CodeWriter:
         self.asm_codes.extend([f"@{label}", "D;JNE"])
         return self.asm_codes
         
-    def write_function(self, type, func, i: int):
+    def write_function(self, func: str, n_vars: int):
         self.clear()
-        pass
+        # write function label
+        self.asm_codes.extend([f"({func})"])
+        # initialize LCL variables "push constant 0; pop local 0"
+        self.asm_codes.extend(["@0", "D=A"])
+        for i in range(n_vars):
+            self.push_D_to_stack()
+        return self.asm_codes
         
-    def write_call(self, type, func, i: int):
+    def write_call(self, func, n_args: int):
         self.clear()
-        pass
+        return_label = f"{func}$ret.{self.ret_i}"
+        self.asm_codes.extend(["// push retAddrLabel"])
+        self.asm_codes.extend([f"@{return_label}", "D=A"])
+        self.push_D_to_stack()
+        
+        self.asm_codes.extend(["// push LCL"])
+        self.asm_codes.extend(["@LCL", "D=M"])
+        self.push_D_to_stack()
+        
+        self.asm_codes.extend(["// push ARG"])
+        self.asm_codes.extend(["@ARG", "D=M"])
+        self.push_D_to_stack()
+        
+        self.asm_codes.extend(["// push THIS"])
+        self.asm_codes.extend(["@THIS", "D=M"])
+        self.push_D_to_stack()
+                 
+        self.asm_codes.extend(["// push THAT"])
+        self.asm_codes.extend(["@THAT", "D=M"])
+        self.push_D_to_stack()
+        
+        self.asm_codes.extend(["// ARG = SP – 5 – nArgs"])     
+        self.asm_codes.extend(["@SP", "D=M", "@5", "D=D-A", f"@{n_args}", "D=D-A", "@ARG", "M=D"])
+        
+        self.asm_codes.extend(["// LCL = SP"])     
+        self.asm_codes.extend(["@SP", "D=M", "@LCL", "M=D"])
+        
+        
+        self.asm_codes.extend(["// goto functionName"])     
+        self.asm_codes.extend([f"@{func}", "0;JMP"])
+         
+        # add (retAddrLabel): functionName$ret.i
+        self.asm_codes.extend([f"({return_label})"])
+        self.ret_i += 1
+        return self.asm_codes
         
     def write_return(self):
         self.clear()
-        pass
+        self.asm_codes.extend(["// endFrame = LCL"])
+        self.asm_codes.extend(["@LCL", "D=M", "@R14", "M=D"])        
+        # Register name, offset
+        def helper(register_name: str, offset: int) ->list:
+            return [
+                "@R14",
+                "D=M",
+                f"@{offset}",
+                "D=D-A",
+                "A=D",
+                "D=M",
+                f"@{register_name}",
+                "M=D",
+            ]
+        self.asm_codes.extend(["// retAddr = *(endFrame–5)"])
+        self.asm_codes.extend(helper("R15", 5))
+        self.asm_codes.extend(["// *ARG = pop()"])
+        self.pop_stack_to_D()
+        self.asm_codes.extend(["@ARG", "A=M", "M=D"])
+        self.asm_codes.extend(["// SP = ARG + 1"])   
+        self.asm_codes.extend(["@ARG", "D=M+1", "@SP", "M=D"])                          
+        self.asm_codes.extend(["// THAT = *(endFrame–1)"])
+        self.asm_codes.extend(helper("THAT", 1))
+        self.asm_codes.extend(["// THIS = *(endFrame–2)"])
+        self.asm_codes.extend(helper("THIS", 2))
+        self.asm_codes.extend(["// ARG = *(endFrame–3)"])
+        self.asm_codes.extend(helper("ARG", 3))
+        self.asm_codes.extend(["// LCL = *(endFrame–4)"])
+        self.asm_codes.extend(helper("LCL", 4))
+        self.asm_codes.extend(["// goto retAddr"])
+        self.asm_codes.extend(["@R15", "A=M", "0;JMP"]) 
+        return self.asm_codes
